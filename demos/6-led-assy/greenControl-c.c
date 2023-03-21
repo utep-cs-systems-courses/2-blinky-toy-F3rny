@@ -9,3 +9,4 @@ void greenControl(int on)
     P1OUT &= ~LED_GREEN;
   }
 }
+

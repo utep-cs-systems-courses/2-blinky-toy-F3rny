@@ -13,3 +13,6 @@ greenControl:
 	pop r0
 off:	and #~64, &P1OUT
 	pop r0
+	
+	
+	

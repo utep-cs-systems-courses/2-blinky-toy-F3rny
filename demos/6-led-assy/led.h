@@ -6,5 +6,7 @@
 #define LEDS (BIT0 | BIT6)
 
 void greenControl(int on);
+void blinkUpdate();
+void oncePerSecond();
 
 #endif // included
