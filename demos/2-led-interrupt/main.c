@@ -13,11 +13,18 @@ int main(void) {
   
   or_sr(0x18);		/* CPU off, GIE on */
 }
-
+int count = 0;
 
 void
 __interrupt_vec(WDT_VECTOR) WDT()	/* 250 interrupts/sec */
 {
-  P1OUT |= LED_GREEN;
+  P1OUT &= ~LEDS;
+  
+  count++;
+  if(count >= 8){
+    P1OUT ^= LED_RED;
+    P1OUT ^= LED_GREEN;
+    count = 0;
+  }
 } 
 
