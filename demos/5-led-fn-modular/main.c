@@ -16,52 +16,56 @@ int main(void) {
 
 void greenControl(int on)
 {
-  if (on) {
+  if(on)
     P1OUT |= LED_GREEN;
-  } else {
+  else
     P1OUT &= ~LED_GREEN;
-  }
 }
 
 // blink state machine
-static int blinkLimit = 5;   //  state var representing reciprocal of duty cycle 
-void blinkUpdate() // called every 1/250s to blink with duty cycle 1/blinkLimit
+
+int blinkLimit = 5;   // state var representing the reciprocal of duty cycle 
+int blinkCount = 0;   // state var representing blink state (blinkUpdate)
+int secondCount = 0;  // state var representing repeating time 0…1s (secondUpdate) 
+
+void blinkUpdate() // called every 1/250 sec to blink with duty cycle 1/blinkLimit
 {
-  static int blinkCount = 0; // state var representing blink state
   blinkCount ++;
   if (blinkCount >= blinkLimit) {
-    blinkCount = 0;
-    greenControl(1);
-  } else
-    greenControl(0);
+    blinkCount = 0; 
+    greenControl(1); 
+  }
+  else
+    greenControl(0); 
 }
 
+//bright to dim
 void oncePerSecond() // repeatedly start bright and gradually lower duty cycle, one step/sec
 {
   blinkLimit ++;  // reduce duty cycle
-  if (blinkLimit >= 8)  // but don't let duty cycle go below 1/7.
+  if (blinkLimit >= 8)  // duty cycle does not go below 1/7.
     blinkLimit = 0;
 }
 
+// updates to call oncePerSecond()
 void secondUpdate()  // called every 1/250 sec to call oncePerSecond once per second
 {
-  static int secondCount = 0; // state variable representing repeating time 0…1s
   secondCount ++;
-  if (secondCount >= 250) { // once each second
+  if (secondCount >= 250) { 
     secondCount = 0;
-    oncePerSecond();
-  } }
+    oncePerSecond(); 
+  }
+}
 
+// Update State Machines
 void timeAdvStateMachines() // called every 1/250 sec
 {
   blinkUpdate();
   secondUpdate();
 }
 
-
 void __interrupt_vec(WDT_VECTOR) WDT()	/* 250 interrupts/sec */
 {
-  // handle blinking   
-  timeAdvStateMachines();
+  timeAdvStateMachines(); 
 } 
 
