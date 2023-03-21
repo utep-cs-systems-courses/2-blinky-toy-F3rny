@@ -15,28 +15,42 @@ int main(void) {
 }
 
 // global state vars that control blinking
-int blinkLimit = 5;  // duty cycle = 1/blinkLimit
-int blinkCount = 0;  // cycles 0...blinkLimit-1
+int blinkLimit = 12;  // duty cycle = 1/blinkLimit
+int blinkRed = 5;
+int blinkCountB = 0;  // cycles 0...blinkLimit-1
+int blinkCountR = 0;
 int secondCount = 0; // state var representing repeating time 0…1s
 
 void
 __interrupt_vec(WDT_VECTOR) WDT()	/* 250 interrupts/sec */
 {
   // handle blinking 
-  blinkCount ++;
-  if (blinkCount >= blinkLimit) { // on for 1 interrupt period
-    blinkCount = 0;
+  blinkCountB ++;
+  if (blinkCountB >= blinkLimit) { // on for 1 interrupt period
+    blinkCountB = 0;
     P1OUT |= LED_GREEN;
-  } else		          // off for blinkLimit - 1 interrupt periods
+  } else{                          // off for blinkLimit - 1 interrupt periods
     P1OUT &= ~LED_GREEN;
+  }
+  
+  blinkCountR ++;
+  if(blinkCountR >= blinkRed){
+    blinkCountR = 0;
+    P1OUT |= LED_RED;
+  } else{
+    P1OUT &= ~LED_RED;
+  }
 
-  // measure a second
+  // measure 2 seconds
   secondCount ++;
-  if (secondCount >= 250) {  // once each second
+  if (secondCount >= 500) {  // once each second // 500 for slower  // 125 for faster
     secondCount = 0;
-    blinkLimit ++;	     // reduce duty cycle
-    if (blinkLimit >= 8)     // but don't let duty cycle go below 1/7.
-      blinkLimit = 0;
+    blinkLimit --;	     // reduce duty cycle // increase when blinkLimit--;
+    if (blinkLimit == 0)
+      blinkLimit = 12;
+    blinkRed++;
+    if(blinkRed >= 8)
+      blinkRed = 0;
   }
 } 
 
