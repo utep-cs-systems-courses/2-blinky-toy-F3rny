@@ -21,9 +21,11 @@ void
 __interrupt_vec(WDT_VECTOR) WDT()	/* 250 interrupts/sec */
 {
   secondCount ++;
-  if (secondCount >= 250) { 	/* once each sec... */
+  if (secondCount >= 125) { 	/* once each 1/2 sec... */
+                                /* 125 will make it twice as fast*/
     secondCount = 0;		/* reset count */
     P1OUT ^= LED_GREEN;		/* toggle green LED */
+    P1OUT ^= LED_RED;          /* toggle red LED alternate to green*/
   }
 } 
 
