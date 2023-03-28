@@ -25,11 +25,33 @@ int main() {
   P2DIR &= ~SWITCHES;		/* set switches' bits for input */
 
   buzzer_init();
- 
+  enableWDTInterrupts();
 
 
   or_sr(0x18);          // CPU off, GIE on
 }
+int soundOn = 0;
+void buzzer_song(){
+  int tone = 3400;
+  if(soundOn){
+    tone += 10;
+    buzzer_set_period(tone);
+  }
+  if (tone >= 3700){
+      tone -= 10;
+      buzzer_set_period(tone);
+  }
+  if(tone < 3300){
+    soundOn = 0;
+  }
+  else{
+    soundOn = 1;
+
+  }
+}
+
+
+
 
 void
 switch_interrupt_handler()
@@ -41,11 +63,9 @@ switch_interrupt_handler()
 
   if (!(p2val & SW1)) {
     buzzer_song();
-    
   }
   else if(!(p2val & SW2)){
-    buzzer_set_period(5727);	/* start buzzing!!! 2MHz/349.23 = 5.7kHz*/ //F4
-    buzzer_set_period(7644);
+   	/* start buzzing!!! 2MHz/349.23 = 5.7kHz*/ //F4
   }
   else if(!(p2val & SW3)){
     buzzer_set_period(7644);	/* start buzzing!!! 2MHz/261.63 = 7.6kHz*/ //C4
@@ -53,7 +73,7 @@ switch_interrupt_handler()
   else if(!(p2val & SW4)){
     buzzer_set_period(5727);	/* start buzzing!!! 2MHz/249.23 = 5.7kHz*/ //F4
   } else{
-    buzzer_set_period(0);
+  
   }
   
 }
@@ -65,3 +85,17 @@ __interrupt_vec(PORT2_VECTOR) Port_2(){
     switch_interrupt_handler();
   }
 }
+int count = 0;
+
+void
+__interrupt_vec(WDT_VECTOR) WDT() 
+{
+  count++;
+  while(count >= 1500){
+    count = 0;
+    buzzer_set_period(0);
+  }
+  
+  
+} 
+
