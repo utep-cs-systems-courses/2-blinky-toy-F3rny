@@ -14,7 +14,7 @@ int main(void) {
   or_sr(0x18);			/* CPU off, GIE on */
 }
 
-// global state var to count time
+// global state var to count tim
 int secondCount = 0;
 
 void
