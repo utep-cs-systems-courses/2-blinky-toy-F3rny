@@ -31,28 +31,29 @@ int main() {
   or_sr(0x18);          // CPU off, GIE on
 }
 int soundOn = 0;
+int tone = 1500;
 void buzzer_song(){
-  int tone = 3400;
-  if(soundOn){
-    tone += 10;
-    buzzer_set_period(tone);
-  }
-  if (tone >= 3700){
-      tone -= 10;
-      buzzer_set_period(tone);
-  }
-  if(tone < 3300){
-    soundOn = 0;
-  }
-  else{
-    soundOn = 1;
-
+  buzzer_set_period(tone); 
+  
+}
+void state_advance()
+{
+  switch(soundOn){
+    case 0:
+      tone += 50;
+      if(tone >= 3000){
+	soundOn = 1;
+      }
+      break;
+    case 1:
+      tone -= 50;
+      if(tone <= 1500){
+	soundOn = 0;
+      }
+      
+      break;
   }
 }
-
-
-
-
 void
 switch_interrupt_handler()
 {
@@ -73,7 +74,7 @@ switch_interrupt_handler()
   else if(!(p2val & SW4)){
     buzzer_set_period(5727);	/* start buzzing!!! 2MHz/249.23 = 5.7kHz*/ //F4
   } else{
-  
+    
   }
   
 }
@@ -85,17 +86,17 @@ __interrupt_vec(PORT2_VECTOR) Port_2(){
     switch_interrupt_handler();
   }
 }
-int count = 0;
 
+int count = 0;
 void
 __interrupt_vec(WDT_VECTOR) WDT() 
 {
   count++;
-  while(count >= 1500){
+  state_advance();
+  if(count >= 1000){
     count = 0;
-    buzzer_set_period(0);
+    buzzer_off();
   }
-  
   
 } 
 
