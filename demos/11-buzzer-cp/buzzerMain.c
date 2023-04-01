@@ -8,13 +8,16 @@
 #define SW3 BIT2
 #define SW4 BIT3
 
-#define BSWITCH   SW1
-#define SWITCHES  ( SW1 | SW2 | SW3 | SW4)
-#define SWITCHES1 SW1
-#define SWITCHES2 SW2
-#define SWITCHES3 SW3
-#define SWITCHES4 SW4
+#define LED_RED BIT0               // P1.0
+#define LED_GREEN BIT6             // P1.6
+#define LEDS (BIT0 | BIT6)
 
+#define BSWITCH   BSW
+#define SWITCHES  ( SW1 | SW2 | SW3 | SW4)
+
+char button_pressed = 0;
+char soundOn = 0;
+int tone = 1500;
 
 int main() {
   configureClocks();
@@ -24,59 +27,80 @@ int main() {
   P2OUT |= SWITCHES;		/* pull-ups for switches */
   P2DIR &= ~SWITCHES;		/* set switches' bits for input */
 
+  P1DIR |= LEDS;
+  P1OUT &= ~LEDS;               /* leds initially off */
+
+  P1REN |= BSWITCH;             /* enables resistors for switches */
+  P1IE |= BSWITCH;              /* enable interrupts from switches */
+  P1OUT |= BSWITCH;             /* pull-ups for switches */
+  P1DIR &= ~BSWITCH;            /* set switches' bits for input */
+  
   buzzer_init();
   enableWDTInterrupts();
-
-
+  
   or_sr(0x18);          // CPU off, GIE on
 }
-int soundOn = 0;
-int tone = 1500;
-void buzzer_song(){
-  buzzer_set_period(tone); 
-  
-}
-void state_advance()
+
+void
+state_advance()
 {
   switch(soundOn){
     case 0:
       tone += 50;
       if(tone >= 3000){
 	soundOn = 1;
+	
       }
+      buzzer_set_period(tone);
       break;
     case 1:
       tone -= 50;
       if(tone <= 1500){
 	soundOn = 0;
       }
-      
+      buzzer_set_period(tone);
       break;
   }
 }
+void red_on(){
+  P1OUT |= LED_RED;
+  P1OUT &= ~LED_GREEN;
+}
+void green_on(){
+  P1OUT &= ~LED_RED;
+  P1OUT |= LED_GREEN;
+}
+
 void
 switch_interrupt_handler()
 {
   char p2val = P2IN; /* switch is in P2*/
+  char p1val = P1IN;
   
   P2IES |= (p2val & SWITCHES);	
   P2IES &= (p2val | ~SWITCHES);
 
+  P1IES |= (p1val & BSWITCH);/* IF SWITCH UP, SENSE DOWN */
+  P1IES &= (p1val | ~BSWITCH);/* IF SWITCH DOWN, SENSE UP */
+
   if (!(p2val & SW1)) {
-    buzzer_song();
+    button_pressed = 1;
+    red_on();
   }
   else if(!(p2val & SW2)){
-   	/* start buzzing!!! 2MHz/349.23 = 5.7kHz*/ //F4
+    buzzer_set_period(5727);	/* start buzzing!!! 2MHz/249.23 = 5.7kHz*/ //F4
+    green_on();
   }
   else if(!(p2val & SW3)){
-    buzzer_set_period(7644);	/* start buzzing!!! 2MHz/261.63 = 7.6kHz*/ //C4
+    buzzer_set_period(4545);    /* start buzzing!!! 2MHz/440.00 = 4.5kHz*/ //A4
+    red_on();
   }
   else if(!(p2val & SW4)){
-    buzzer_set_period(5727);	/* start buzzing!!! 2MHz/249.23 = 5.7kHz*/ //F4
+    buzzer_set_period(7644);	/* start buzzing!!! 2MHz/261.63 = 7.6kHz*/ //C4
+    green_on();
   } else{
-    
+    button_pressed = 0;
   }
-  
 }
 
 void
@@ -87,16 +111,26 @@ __interrupt_vec(PORT2_VECTOR) Port_2(){
   }
 }
 
+void
+__interrupt_vec(PORT1_VECTOR) Port_1(){
+  if (P1IFG & BSWITCH) {
+    P1IFG &= ~BSWITCH;
+    switch_interrupt_handler();
+  }
+}
+
+
 int count = 0;
 void
 __interrupt_vec(WDT_VECTOR) WDT() 
 {
   count++;
-  state_advance();
+  if(button_pressed){
+    state_advance();
+  }
   if(count >= 1000){
     count = 0;
     buzzer_off();
+    
   }
-  
 } 
-
