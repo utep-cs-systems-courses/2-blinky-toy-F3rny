@@ -19,6 +19,7 @@ char button_pressed = 0;
 char soundOn = 0;
 int tone = 1500;
 
+
 int main() {
   configureClocks();
 
@@ -62,6 +63,24 @@ state_advance()
       break;
   }
 }
+void state_machine(){
+  if(button_pressed == 1){
+    state_advance();
+  }
+  else if(button_pressed == 2){
+    buzzer_set_period(5727);	/* start buzzing!!! 2MHz/249.23 = 5.7kHz*/ //F4
+  }
+  else if(button_pressed == 3){
+    buzzer_set_period(4545);    /* start buzzing!!! 2MHz/440.00 = 4.5kHz*/ //A4
+  }
+  else if(button_pressed == 4){
+    buzzer_set_period(7644);	/* start buzzing!!! 2MHz/261.63 = 7.6kHz*/ //C4
+  }
+  else{
+    button_pressed = 0;
+  }
+}   
+    
 void red_on(){
   P1OUT |= LED_RED;
   P1OUT &= ~LED_GREEN;
@@ -88,18 +107,19 @@ switch_interrupt_handler()
     red_on();
   }
   else if(!(p2val & SW2)){
-    buzzer_set_period(5727);	/* start buzzing!!! 2MHz/249.23 = 5.7kHz*/ //F4
+    button_pressed = 2;
     green_on();
   }
   else if(!(p2val & SW3)){
-    buzzer_set_period(4545);    /* start buzzing!!! 2MHz/440.00 = 4.5kHz*/ //A4
+    button_pressed = 3;
     red_on();
   }
   else if(!(p2val & SW4)){
-    buzzer_set_period(7644);	/* start buzzing!!! 2MHz/261.63 = 7.6kHz*/ //C4
+    button_pressed = 4;
     green_on();
-  } else{
-    button_pressed = 0;
+  }
+  else{
+    
   }
 }
 
@@ -125,12 +145,10 @@ void
 __interrupt_vec(WDT_VECTOR) WDT() 
 {
   count++;
-  if(button_pressed){
-    state_advance();
-  }
   if(count >= 1000){
     count = 0;
     buzzer_off();
-    
+    button_pressed = 0;
   }
+  state_machine();
 } 
